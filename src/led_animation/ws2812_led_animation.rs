@@ -3,10 +3,12 @@ use std::slice::SliceIndex;
 use smart_leds::RGB8;
 use ws2812_esp32_rmt_driver::Ws2812Esp32RmtDriver;
 
+/// Trait for structs that can handle performing an RGB LED animation.
 pub trait RgbLedAnimation {
     fn next_frame(&mut self);
 }
 
+/// Struct to handle performing a simple rainbow animation on many LEDs.
 pub struct Rgb8RainbowAnimation {
     pixels: Vec<RGB8>,
     cur_color_increment: Vec<PixelColor>, // should be the same length as pixels
@@ -40,6 +42,11 @@ impl Rgb8RainbowAnimation {
     }
 }
 
+/// Increments a pixel's value.
+///
+/// # Returns
+/// - `Err` when it would have overflowed (does not set `val`),
+/// `Ok` when the value was increment and there was no overflow.
 fn pixel_increment(val: &mut u8) -> Result<(), ()> {
     let mut output = Ok(());
     let result = val.checked_add(1);
@@ -55,6 +62,11 @@ fn pixel_increment(val: &mut u8) -> Result<(), ()> {
     output
 }
 
+/// Decrements a pixel's value.
+///
+/// # Returns
+/// - `Err` when it would have overflowed (does not set `val`),
+/// `Ok` when the value was increment and there was no overflow.
 fn pixel_decrement(val: &mut u8) -> Result<(), ()> {
     let mut output = Ok(());
     let result = val.checked_sub(1);
