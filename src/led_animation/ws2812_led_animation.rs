@@ -1,7 +1,4 @@
-use std::slice::SliceIndex;
-
 use smart_leds::RGB8;
-use ws2812_esp32_rmt_driver::Ws2812Esp32RmtDriver;
 
 /// Trait for structs that can handle performing an RGB LED animation.
 pub trait RgbLedAnimation {
@@ -28,7 +25,7 @@ impl AsRef<Vec<RGB8>> for Rgb8RainbowAnimation {
 }
 
 impl Rgb8RainbowAnimation {
-    /// Creates a new animation, with all lights off at the start
+    /// Creates a new animation, with all lights off at the start.
     pub fn new(num_pixels: usize) -> Self {
         // let's start off with all off
         Self {
