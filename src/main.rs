@@ -24,6 +24,7 @@ fn main() -> Result<()> {
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
         Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48).unwrap();
+    // driver for our led strip
     let mut strip_led_driver =
         Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40).unwrap();
 
