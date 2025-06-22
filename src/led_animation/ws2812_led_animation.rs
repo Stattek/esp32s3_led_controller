@@ -3,7 +3,7 @@ use std::slice::SliceIndex;
 use smart_leds::RGB8;
 use ws2812_esp32_rmt_driver::Ws2812Esp32RmtDriver;
 
-pub trait Rgb8Animation {
+pub trait RgbLedAnimation {
     fn next_frame(&mut self);
 }
 
@@ -70,7 +70,7 @@ fn pixel_decrement(val: &mut u8) -> Result<(), ()> {
     output
 }
 
-impl Rgb8Animation for Rgb8RainbowAnimation {
+impl RgbLedAnimation for Rgb8RainbowAnimation {
     fn next_frame(&mut self) {
         for i in 0..self.pixels.len() {
             let cur_increment = &mut self.cur_color_increment[i];
