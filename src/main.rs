@@ -10,11 +10,16 @@ use ws2812_esp32_rmt_driver::{
     LedPixelEsp32Rmt, Ws2812Esp32Rmt, Ws2812Esp32RmtDriver, RGBW8,
 };
 
+use crate::led_animation::ws2812_led_animation::{Rgb8RainbowAnimation, RgbLedAnimation};
+
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
 
     let peripherals = Peripherals::take().unwrap();
+
+    // number of pixels on LED light strip
+    const NUM_PIXELS: usize = 300;
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
@@ -22,7 +27,7 @@ fn main() -> Result<()> {
     let mut strip_led_driver =
         Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40).unwrap();
 
-    let pixels = std::iter::repeat(RGB8::new(255, 0, 0)).take(300);
+    let pixels = std::iter::repeat(RGB8::new(255, 0, 0)).take(NUM_PIXELS);
     strip_led_driver.write(pixels).unwrap();
 
     set_led_yellow(&mut onboard_led_driver)?;
@@ -31,15 +36,18 @@ fn main() -> Result<()> {
     // This is not true until you actually create one
     log::info!("Server awaiting connection");
     set_led_green(&mut onboard_led_driver)?;
+    std::thread::sleep(Duration::from_millis(400));
 
+    let mut rainbow_animation = Rgb8RainbowAnimation::new(NUM_PIXELS);
+
+    set_led_blue(&mut onboard_led_driver)?;
     // Prevent program from exiting
     loop {
-        std::thread::sleep(Duration::from_millis(400));
-        set_led_blue(&mut onboard_led_driver)?;
-
-        let pixels = std::iter::repeat(RGB8::new(0, 255, 0)).take(300);
+        rainbow_animation.next_frame();
+        // log::error!("{:?}", rainbow_animation.as_ref());
+        let pixels = rainbow_animation.as_ref().clone().into_iter();
         strip_led_driver.write(pixels).unwrap();
-        std::thread::sleep(Duration::from_millis(1000));
+        std::thread::sleep(Duration::from_millis(100));
     }
 }
 
