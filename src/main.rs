@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+mod led_animation;
+
 use anyhow::Result;
 use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::prelude::Peripherals};
 use smart_leds::{SmartLedsWrite, White, RGB8};
@@ -18,9 +20,9 @@ fn main() -> Result<()> {
     let mut onboard_led_driver =
         Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48).unwrap();
     let mut strip_led_driver =
-        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio45).unwrap();
+        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40).unwrap();
 
-    let pixels = std::iter::repeat(RGB8::new(30, 0, 0)).take(25);
+    let pixels = std::iter::repeat(RGB8::new(255, 0, 0)).take(300);
     strip_led_driver.write(pixels).unwrap();
 
     set_led_yellow(&mut onboard_led_driver)?;
@@ -35,8 +37,8 @@ fn main() -> Result<()> {
         std::thread::sleep(Duration::from_millis(400));
         set_led_blue(&mut onboard_led_driver)?;
 
-        let pixels = std::iter::repeat(RGBW8::new_alpha(6, 0, 0, White(0))).take(25);
-        strip_led_driver.write_nocopy(pixels).unwrap();
+        let pixels = std::iter::repeat(RGB8::new(0, 255, 0)).take(300);
+        strip_led_driver.write(pixels).unwrap();
         std::thread::sleep(Duration::from_millis(1000));
     }
 }
