@@ -3,11 +3,11 @@ use std::time::Duration;
 mod led_animation;
 
 use anyhow::Result;
-use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::prelude::Peripherals};
-use smart_leds::{SmartLedsWrite, White, RGB8};
+use esp_idf_svc::hal::prelude::Peripherals;
+use smart_leds::{SmartLedsWrite, RGB8};
 use ws2812_esp32_rmt_driver::{
-    driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorGrbw32},
-    LedPixelEsp32Rmt, Ws2812Esp32Rmt, Ws2812Esp32RmtDriver, RGBW8,
+    driver::color::{LedPixelColor, LedPixelColorGrb24},
+    Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
 use crate::led_animation::ws2812_led_animation::{Rgb8RainbowAnimation, RgbLedAnimation};
