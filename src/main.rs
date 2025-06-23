@@ -10,8 +10,10 @@ use ws2812_esp32_rmt_driver::{
     Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
-use crate::led_animation::rainbow_animation::Rgb8RainbowAnimation;
 use crate::led_animation::ws2812_led_animation::RgbLedAnimation;
+use crate::led_animation::{
+    rainbow_animation::Rgb8RainbowAnimation, rainbow_snake_animation::Rgb8RainbowSnakeAnimation,
+};
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -20,7 +22,7 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
 
     // number of pixels on LED light strip
-    const NUM_PIXELS: usize = 300;
+    const NUM_PIXELS: usize = 10;
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
@@ -40,13 +42,13 @@ fn main() -> Result<()> {
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
 
-    let mut rainbow_animation = Rgb8RainbowAnimation::new(NUM_PIXELS);
+    let mut rainbow_animation = Rgb8RainbowSnakeAnimation::new(NUM_PIXELS, 2);
 
     set_led_blue(&mut onboard_led_driver)?;
     // Prevent program from exiting
     loop {
         rainbow_animation.next_frame();
-        // log::error!("{:?}", rainbow_animation.as_ref());
+        log::error!("{:?}", rainbow_animation.as_ref());
         let pixels = rainbow_animation.as_ref().clone().into_iter();
         strip_led_driver.write(pixels).unwrap();
         std::thread::sleep(Duration::from_millis(100));
