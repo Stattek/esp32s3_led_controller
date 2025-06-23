@@ -10,7 +10,8 @@ use ws2812_esp32_rmt_driver::{
     Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
-use crate::led_animation::ws2812_led_animation::{Rgb8RainbowAnimation, RgbLedAnimation};
+use crate::led_animation::rainbow_animation::Rgb8RainbowAnimation;
+use crate::led_animation::ws2812_led_animation::RgbLedAnimation;
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
