@@ -16,6 +16,7 @@ pub struct Rgb8RainbowSnakeAnimation {
     head_location: usize,
     snake_length: usize,
     snake_direction: Direction, // direction snake is moving in
+    color_step_amount: u8,
 }
 
 impl AsRef<Vec<RGB8>> for Rgb8RainbowSnakeAnimation {
@@ -26,7 +27,7 @@ impl AsRef<Vec<RGB8>> for Rgb8RainbowSnakeAnimation {
 
 impl Rgb8RainbowSnakeAnimation {
     /// Creates a new animation, with all lights off at the start.
-    pub fn new(num_pixels: usize, snake_length: usize) -> Self {
+    pub fn new(num_pixels: usize, snake_length: usize, color_step_amount: u8) -> Self {
         // let's start off with all off
         Self {
             main_pixel_color: RGB8::new(0, 0, 0),
@@ -37,6 +38,7 @@ impl Rgb8RainbowSnakeAnimation {
             head_location: 0,
             snake_length: snake_length,
             snake_direction: Direction::Forward,
+            color_step_amount: color_step_amount,
         }
     }
 }
@@ -46,9 +48,9 @@ impl Rgb8RainbowSnakeAnimation {
 /// # Returns
 /// - `Err` when it would have overflowed (does not set `val`),
 /// `Ok` when the value was increment and there was no overflow.
-fn pixel_increment(val: &mut u8) -> Result<(), ()> {
+fn pixel_increment(val: &mut u8, amount: u8) -> Result<(), ()> {
     let mut output = Ok(());
-    let result = val.checked_add(1);
+    let result = val.checked_add(amount);
     match result {
         Some(ok_val) => {
             *val = ok_val;
@@ -66,9 +68,9 @@ fn pixel_increment(val: &mut u8) -> Result<(), ()> {
 /// # Returns
 /// - `Err` when it would have overflowed (does not set `val`),
 /// `Ok` when the value was increment and there was no overflow.
-fn pixel_decrement(val: &mut u8) -> Result<(), ()> {
+fn pixel_decrement(val: &mut u8, amount: u8) -> Result<(), ()> {
     let mut output = Ok(());
-    let result = val.checked_sub(1);
+    let result = val.checked_sub(amount);
     match result {
         Some(ok_val) => {
             *val = ok_val;
@@ -90,34 +92,37 @@ impl RgbLedAnimation for Rgb8RainbowSnakeAnimation {
         let cur_increment = &mut self.cur_color_increment;
         match *cur_increment {
             PixelColor::Red => {
-                let inc_result = pixel_increment(&mut self.main_pixel_color.r);
+                let inc_result =
+                    pixel_increment(&mut self.main_pixel_color.r, self.color_step_amount);
                 if inc_result.is_err() {
                     // reached highest value, increment next color
                     *cur_increment = PixelColor::Green;
                 }
 
                 // subtract last color
-                let _ = pixel_decrement(&mut self.main_pixel_color.b);
+                let _ = pixel_decrement(&mut self.main_pixel_color.b, self.color_step_amount);
             }
             PixelColor::Green => {
-                let inc_result = pixel_increment(&mut self.main_pixel_color.g);
+                let inc_result =
+                    pixel_increment(&mut self.main_pixel_color.g, self.color_step_amount);
                 if inc_result.is_err() {
                     // reached highest value, increment next color
                     *cur_increment = PixelColor::Blue;
                 }
 
                 // subtract last color
-                let _ = pixel_decrement(&mut self.main_pixel_color.r);
+                let _ = pixel_decrement(&mut self.main_pixel_color.r, self.color_step_amount);
             }
             PixelColor::Blue => {
-                let inc_result = pixel_increment(&mut self.main_pixel_color.b);
+                let inc_result =
+                    pixel_increment(&mut self.main_pixel_color.b, self.color_step_amount);
                 if inc_result.is_err() {
                     // reached highest value, increment next color
                     *cur_increment = PixelColor::Red;
                 }
 
                 // subtract last color
-                let _ = pixel_decrement(&mut self.main_pixel_color.g);
+                let _ = pixel_decrement(&mut self.main_pixel_color.g, self.color_step_amount);
             }
         }
 
@@ -125,8 +130,12 @@ impl RgbLedAnimation for Rgb8RainbowSnakeAnimation {
         for (i, pixel) in self.pixels.iter_mut().enumerate() {
             match self.snake_direction {
                 Direction::Forward => {
-                    // TODO: this is probably wrong
-                    if i - self.head_location <= self.snake_length {
+                    // NOTE: having this as a usize means we do not need to worry about
+                    // the position being negative. It will wrap back around
+                    // (to be a number much larger than the snake length) and we have
+                    // up to `usize` LEDs, so we should not run into overflow issues here
+                    let segment_position = self.head_location - i;
+                    if segment_position < self.snake_length {
                         *pixel = self.main_pixel_color;
                     } else {
                         pixel_reset(pixel);
@@ -134,7 +143,8 @@ impl RgbLedAnimation for Rgb8RainbowSnakeAnimation {
                 }
                 Direction::Backward => {
                     // TODO: this is probably wrong
-                    if i - self.head_location >= self.snake_length {
+                    let segment_position: i32 = (i - self.head_location) as i32;
+                    if segment_position >= 0 && segment_position < self.snake_length as i32 {
                         *pixel = self.main_pixel_color;
                     } else {
                         pixel_reset(pixel);
