@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
 
     // number of pixels on LED light strip
-    const NUM_PIXELS: usize = 10;
+    const NUM_PIXELS: usize = 200;
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
@@ -42,13 +42,13 @@ fn main() -> Result<()> {
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
 
-    let mut rainbow_animation = Rgb8RainbowSnakeAnimation::new(NUM_PIXELS, 2);
+    let mut rainbow_animation = Rgb8RainbowSnakeAnimation::new(NUM_PIXELS, NUM_PIXELS / 3, 2);
 
     set_led_blue(&mut onboard_led_driver)?;
     // Prevent program from exiting
     loop {
         rainbow_animation.next_frame();
-        log::error!("{:?}", rainbow_animation.as_ref());
+        // log::error!("{:?}", rainbow_animation.as_ref());
         let pixels = rainbow_animation.as_ref().clone().into_iter();
         strip_led_driver.write(pixels).unwrap();
         std::thread::sleep(Duration::from_millis(100));
