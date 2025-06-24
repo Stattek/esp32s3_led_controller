@@ -126,7 +126,6 @@ impl RgbLedAnimation for Rgb8RainbowSnakeAnimation {
             }
         }
 
-        // TODO: check this loop, I think it's very wrong for making a rainbow snake
         for (i, pixel) in self.pixels.iter_mut().enumerate() {
             match self.snake_direction {
                 Direction::Forward => {
@@ -142,7 +141,6 @@ impl RgbLedAnimation for Rgb8RainbowSnakeAnimation {
                     }
                 }
                 Direction::Backward => {
-                    // TODO: this is probably wrong
                     let segment_position: i32 = (i - self.head_location) as i32;
                     if segment_position >= 0 && segment_position < self.snake_length as i32 {
                         *pixel = self.main_pixel_color;
