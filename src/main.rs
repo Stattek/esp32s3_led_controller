@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
 
     // number of pixels on LED light strip
-    const NUM_PIXELS: usize = 200;
+    const NUM_PIXELS: usize = 250;
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
