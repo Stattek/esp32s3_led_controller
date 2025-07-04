@@ -33,7 +33,7 @@ impl Rgb8RainbowAnimation {
 ///
 /// # Returns
 /// - `Err` when it would have overflowed (does not set `val`),
-/// `Ok` when the value was increment and there was no overflow.
+///   `Ok` when the value was increment and there was no overflow.
 fn pixel_increment(val: &mut u8) -> Result<(), ()> {
     let mut output = Ok(());
     let result = val.checked_add(1);
@@ -53,7 +53,7 @@ fn pixel_increment(val: &mut u8) -> Result<(), ()> {
 ///
 /// # Returns
 /// - `Err` when it would have overflowed (does not set `val`),
-/// `Ok` when the value was increment and there was no overflow.
+///   `Ok` when the value was increment and there was no overflow.
 fn pixel_decrement(val: &mut u8) -> Result<(), ()> {
     let mut output = Ok(());
     let result = val.checked_sub(1);

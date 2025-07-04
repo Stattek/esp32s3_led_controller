@@ -30,9 +30,9 @@ impl Rgb8RainbowSnakeAnimation {
                 .collect(),
             cur_color_increment: PixelColor::Red,
             head_location: 0,
-            snake_length: snake_length,
+            snake_length,
             snake_direction: Direction::Forward,
-            color_step_amount: color_step_amount,
+            color_step_amount,
         }
     }
 }
@@ -41,7 +41,7 @@ impl Rgb8RainbowSnakeAnimation {
 ///
 /// # Returns
 /// - `Err` when it would have overflowed (does not set `val`),
-/// `Ok` when the value was increment and there was no overflow.
+///   `Ok` when the value was increment and there was no overflow.
 fn pixel_increment(val: &mut u8, amount: u8) -> Result<(), ()> {
     let mut output = Ok(());
     let result = val.checked_add(amount);
@@ -61,7 +61,7 @@ fn pixel_increment(val: &mut u8, amount: u8) -> Result<(), ()> {
 ///
 /// # Returns
 /// - `Err` when it would have overflowed (does not set `val`),
-/// `Ok` when the value was increment and there was no overflow.
+///   `Ok` when the value was increment and there was no overflow.
 fn pixel_decrement(val: &mut u8, amount: u8) -> Result<(), ()> {
     let mut output = Ok(());
     let result = val.checked_sub(amount);
