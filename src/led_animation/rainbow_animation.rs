@@ -15,6 +15,7 @@ impl AsRef<Vec<RGB8>> for Rgb8RainbowAnimation {
 
 impl Rgb8RainbowAnimation {
     /// Creates a new animation, with all lights off at the start.
+    #[allow(dead_code)]
     pub fn new(num_pixels: usize) -> Self {
         // let's start off with all off
         Self {

@@ -4,7 +4,7 @@ use crate::led_animation::ws2812_led_animation::{Direction, RgbLedAnimation};
 use smart_leds::RGB8;
 
 // predefined pixel sequences
-#[allow(unused)]
+#[allow(dead_code)]
 pub const FOURTH_OF_JULY_SEQUENCE: [RGB8; 9] = [
     RGB8::new(255, 0, 0),
     RGB8::new(255, 0, 0),
@@ -33,7 +33,7 @@ impl AsRef<Vec<RGB8>> for Rgb8BasicPixelSequenceAnimation {
 
 impl Rgb8BasicPixelSequenceAnimation {
     /// Creates a new animation, with a basic pixel sequence.
-    #[allow(unused)]
+    #[allow(dead_code)]
     pub fn new(num_pixels: usize, pixel_sequence: Vec<RGB8>, direction: Direction) -> Self {
         Self {
             repeated_color_sequence: VecDeque::from(pixel_sequence.clone()),
@@ -74,7 +74,7 @@ impl RgbLedAnimation for Rgb8BasicPixelSequenceAnimation {
 
 impl Rgb8BasicPixelSequenceAnimation {
     /// Sets the direction of the animation.
-    #[allow(unused)]
+    #[allow(dead_code)]
     pub fn set_direction(&mut self, direction: Direction) {
         self.direction = direction;
     }

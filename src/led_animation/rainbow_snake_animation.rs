@@ -20,6 +20,7 @@ impl AsRef<Vec<RGB8>> for Rgb8RainbowSnakeAnimation {
 
 impl Rgb8RainbowSnakeAnimation {
     /// Creates a new animation, with all lights off at the start.
+    #[allow(dead_code)]
     pub fn new(num_pixels: usize, snake_length: usize, color_step_amount: u8) -> Self {
         // let's start off with all off
         Self {
