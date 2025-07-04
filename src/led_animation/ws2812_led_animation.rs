@@ -10,3 +10,10 @@ pub enum PixelColor {
     Blue,
     Green,
 }
+
+/// Direction for the animation to move in.
+#[derive(Clone, Copy)]
+pub enum Direction {
+    Forward,
+    Backward,
+}
