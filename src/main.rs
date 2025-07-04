@@ -58,6 +58,8 @@ fn main() -> Result<()> {
     }
 }
 
+// TODO: the functions below are kinda dumb
+
 /// Sets the onboard ESP32-S3 WS2812 LED to green.
 fn set_led_green(led_driver: &mut Ws2812Esp32RmtDriver) -> anyhow::Result<()> {
     let green = LedPixelColorGrb24::new_with_rgb(0, 30, 0);
