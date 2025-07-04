@@ -10,8 +10,10 @@ use ws2812_esp32_rmt_driver::{
     Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
-use crate::led_animation::rainbow_animation::Rgb8RainbowAnimation;
-use crate::led_animation::ws2812_led_animation::RgbLedAnimation;
+use crate::led_animation::{
+    basic_pixel_sequence_animation::{Rgb8BasicPixelSequenceAnimation, FOURTH_OF_JULY_SEQUENCE},
+    ws2812_led_animation::{Direction, RgbLedAnimation},
+};
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -20,7 +22,7 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
 
     // number of pixels on LED light strip
-    const NUM_PIXELS: usize = 300;
+    const NUM_PIXELS: usize = 275;
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
@@ -29,29 +31,34 @@ fn main() -> Result<()> {
     let mut strip_led_driver =
         Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40).unwrap();
 
-    let pixels = std::iter::repeat(RGB8::new(255, 0, 0)).take(NUM_PIXELS);
-    strip_led_driver.write(pixels).unwrap();
+    // start all pixels as yellow at first
 
     set_led_yellow(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_secs(1));
+    let pixels = std::iter::repeat(RGB8::new(255, 255, 0)).take(NUM_PIXELS);
+    strip_led_driver.write(pixels).unwrap();
 
-    // This is not true until you actually create one
-    log::info!("Server awaiting connection");
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
 
-    let mut rainbow_animation = Rgb8RainbowAnimation::new(NUM_PIXELS);
+    let mut pixel_animation = Rgb8BasicPixelSequenceAnimation::new(
+        NUM_PIXELS,
+        FOURTH_OF_JULY_SEQUENCE.to_vec(),
+        Direction::Forward,
+    );
 
     set_led_blue(&mut onboard_led_driver)?;
     // Prevent program from exiting
     loop {
-        rainbow_animation.next_frame();
+        pixel_animation.next_frame();
         // log::error!("{:?}", rainbow_animation.as_ref());
-        let pixels = rainbow_animation.as_ref().clone().into_iter();
+        let pixels = pixel_animation.as_ref().clone().into_iter();
         strip_led_driver.write(pixels).unwrap();
         std::thread::sleep(Duration::from_millis(100));
     }
 }
+
+// TODO: the functions below are kinda dumb
 
 /// Sets the onboard ESP32-S3 WS2812 LED to green.
 fn set_led_green(led_driver: &mut Ws2812Esp32RmtDriver) -> anyhow::Result<()> {
