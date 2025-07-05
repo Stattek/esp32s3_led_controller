@@ -3,26 +3,6 @@ use std::collections::VecDeque;
 use crate::led_animation::ws2812_led_animation::{Direction, RgbLedAnimation};
 use smart_leds::RGB8;
 
-// predefined pixel sequences
-#[allow(dead_code)]
-pub const FOURTH_OF_JULY_SEQUENCE: [RGB8; 15] = [
-    RGB8::new(255, 0, 0),
-    RGB8::new(255, 0, 0),
-    RGB8::new(255, 0, 0),
-    RGB8::new(255, 0, 0),
-    RGB8::new(255, 0, 0),
-    RGB8::new(255, 255, 255),
-    RGB8::new(255, 255, 255),
-    RGB8::new(255, 255, 255),
-    RGB8::new(255, 255, 255),
-    RGB8::new(255, 255, 255),
-    RGB8::new(0, 0, 255),
-    RGB8::new(0, 0, 255),
-    RGB8::new(0, 0, 255),
-    RGB8::new(0, 0, 255),
-    RGB8::new(0, 0, 255),
-];
-
 /// Struct to handle moving a basic pixel sequence on many LEDs.
 pub struct Rgb8BasicPixelSequenceAnimation {
     repeated_color_sequence: VecDeque<RGB8>,

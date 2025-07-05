@@ -11,7 +11,8 @@ use ws2812_esp32_rmt_driver::{
 };
 
 use crate::led_animation::{
-    basic_pixel_sequence_animation::{Rgb8BasicPixelSequenceAnimation, FOURTH_OF_JULY_SEQUENCE},
+    basic_pixel_sequence_animation::Rgb8BasicPixelSequenceAnimation,
+    basic_pixel_sequences::FOURTH_OF_JULY_SEQUENCE,
     ws2812_led_animation::{Direction, RgbLedAnimation},
 };
 
