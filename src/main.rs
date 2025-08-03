@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-mod led_animation;
-
 use anyhow::Result;
 use esp_idf_svc::hal::prelude::Peripherals;
 use smart_leds::{SmartLedsWrite, RGB8};
@@ -10,9 +8,12 @@ use ws2812_esp32_rmt_driver::{
     Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
-use crate::led_animation::{
-    basic_pixel_sequence_animation::{Rgb8BasicPixelSequenceAnimation, FOURTH_OF_JULY_SEQUENCE},
-    ws2812_led_animation::{Direction, RgbLedAnimation},
+use esp32_led_animation::{
+    led_animation::{
+        basic_pixel_sequence_animation::Rgb8BasicPixelSequenceAnimation,
+        basic_pixel_sequences::FOURTH_OF_JULY_SEQUENCE,
+    },
+    Direction, RgbLedAnimation,
 };
 
 fn main() -> Result<()> {

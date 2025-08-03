@@ -28,6 +28,7 @@ esp-idf-svc = "0.51"
 ws2812-esp32-rmt-driver = { version = "0.12.0", features = ["smart-leds-trait"] }
 smart-leds="0.4.0"
 anyhow = "1.0.98"
+esp32-led-animation = { git = "https://github.com/Stattek/esp32_led_animations" }
 
 # --- Optional Embassy Integration ---
 # esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
