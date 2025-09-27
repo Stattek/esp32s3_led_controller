@@ -5,13 +5,13 @@ use esp_idf_svc::hal::prelude::Peripherals;
 use smart_leds::{SmartLedsWrite, RGB8};
 use ws2812_esp32_rmt_driver::{
     driver::color::{LedPixelColor, LedPixelColorGrb24},
-    Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
+    LedPixelEsp32Rmt, Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
 use esp32_led_animation::{
     led_animation::{
         basic_pixel_sequence_animation::Rgb8BasicPixelSequenceAnimation,
-        basic_pixel_sequences::FOURTH_OF_JULY_SEQUENCE,
+        basic_pixel_sequences::PURPLES_SEQUENCE,
     },
     Direction, RgbLedAnimation,
 };
@@ -27,7 +27,7 @@ fn main() -> Result<()> {
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
-        Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48).unwrap();
+        LedPixelEsp32Rmt::new(peripherals.rmt.channel0, peripherals.pins.gpio48).unwrap();
     // driver for our led strip
     let mut strip_led_driver =
         Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40).unwrap();
@@ -44,7 +44,7 @@ fn main() -> Result<()> {
 
     let mut pixel_animation = Rgb8BasicPixelSequenceAnimation::new(
         NUM_PIXELS,
-        FOURTH_OF_JULY_SEQUENCE.to_vec(),
+        PURPLES_SEQUENCE.to_vec(),
         Direction::Forward,
     );
 
@@ -62,9 +62,15 @@ fn main() -> Result<()> {
 // TODO: the functions below are kinda dumb
 
 /// Sets the onboard ESP32-S3 WS2812 LED to green.
-fn set_led_green(led_driver: &mut Ws2812Esp32RmtDriver) -> anyhow::Result<()> {
+fn set_led_green<'a, CSmart, CDev>(
+    led_driver: &mut LedPixelEsp32Rmt<'a, CSmart, CDev>,
+) -> anyhow::Result<()>
+where
+    CDev: LedPixelColor + From<CSmart>,
+{
     let green = LedPixelColorGrb24::new_with_rgb(0, 30, 0);
     let green_pixel: [u8; 3] = green.as_ref().try_into().unwrap();
+    led_driver.write(green_pixel.into_iter())?;
 
     led_driver.write_blocking(green_pixel.into_iter())?;
 
