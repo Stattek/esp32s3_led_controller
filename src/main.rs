@@ -16,7 +16,7 @@ use esp32_led_animation::{
     led_animation::{
         basic_pixel_sequence_animation::Rgb8BasicPixelSequenceAnimation,
         basic_pixel_sequences::{FOURTH_OF_JULY_SEQUENCE, OFF_WHITE_SEQUENCE},
-        elevator_number_animation::Rgb8SingleLedFadeAnimation,
+        single_led_fade_animation::Rgb8SingleLedFadeAnimation,
     },
     Direction, RgbLedAnimation,
 };
