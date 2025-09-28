@@ -1,4 +1,5 @@
 mod elevator;
+mod ws2811;
 
 use anyhow::Result;
 use esp_idf_svc::hal::{
@@ -21,14 +22,7 @@ use esp32_led_animation::{
     Direction, RgbLedAnimation,
 };
 
-/// 8-bit RGB LED pixel color (total 32-bit pixel), Typical RGB LED (WS2811) pixel color
-/// NOTE: this should be implemented in the library already.
-pub type LedPixelColorRgb24 = LedPixelColorImpl<3, 0, 1, 2, 255>;
-
-/// 8-bit RGB (total 24-bit pixel) LED driver wrapper providing smart-leds API,
-/// Typical RGB LED (WS2811) driver wrapper providing smart-leds API
-///
-pub type Ws2811Esp32Rmt<'d> = LedPixelEsp32Rmt<'d, RGB8, LedPixelColorRgb24>;
+use crate::ws2811::ws2811_rmt_types::Ws2811Esp32Rmt;
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
