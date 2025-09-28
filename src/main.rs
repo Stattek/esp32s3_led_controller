@@ -61,7 +61,7 @@ fn main() -> Result<()> {
     std::thread::sleep(Duration::from_millis(400));
 
     let mut floor_number_animation =
-        Rgb8SingleLedFadeAnimation::new(NUM_PIXELS, RGB8::new(255, 255, 255), 30);
+        Rgb8SingleLedFadeAnimation::new(NUM_PIXELS, RGB8::new(255, 255, 255), 70);
 
     let mut pixel_animation = Rgb8BasicPixelSequenceAnimation::new(
         NUM_PIXELS,
@@ -106,7 +106,7 @@ fn main() -> Result<()> {
 
             // increment this index after we set the floor number, so we start at 0
             cur_floor_idx = (cur_floor_idx + 1) % NUM_PIXELS;
-            log::error!("Floor animation colors = {:?}", floor_number_animation);
+            // log::error!("Floor animation colors = {:?}", floor_number_animation);
         }
 
         floor_number_animation.next_frame();
