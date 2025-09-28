@@ -101,7 +101,7 @@ fn main() -> Result<()> {
             log::warn!("Floor index changed to {cur_floor_idx}");
             // now we can set the floor LED since we just changed the data we are sending
             floor_number_animation
-                .set_led_on(cur_floor_idx)
+                .set_led_on(cur_floor_idx, true)
                 .expect("Could not set floor number LED");
 
             // increment this index after we set the floor number, so we start at 0
