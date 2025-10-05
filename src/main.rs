@@ -6,6 +6,7 @@ use esp_idf_svc::hal::{
     gpio::{Input, PinDriver, Pull},
     prelude::Peripherals,
 };
+use log::LevelFilter;
 use smart_leds::{SmartLedsWrite, RGB8};
 use std::time::Duration;
 use ws2812_esp32_rmt_driver::{
@@ -17,12 +18,15 @@ use esp32_led_animation::{
     led_animation::{
         basic_pixel_sequence_animation::Rgb8BasicPixelSequenceAnimation,
         basic_pixel_sequences::{FOURTH_OF_JULY_SEQUENCE, OFF_WHITE_SEQUENCE},
+        elevator_animation::{self, Rgb8ElevatorAnimation},
         single_led_fade_animation::Rgb8SingleLedFadeAnimation,
     },
     Direction, RgbLedAnimation,
 };
 
-use crate::ws2811::ws2811_rmt_types::Ws2811Esp32Rmt;
+use crate::{
+    elevator::elevator_handler::ElevatorHandler, ws2811::ws2811_rmt_types::Ws2811Esp32Rmt,
+};
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -31,44 +35,52 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take().unwrap();
 
     // number of pixels on LED light strip
-    const NUM_PIXELS: usize = 50;
+    const NUM_FLOOR_BUTTON_PIXELS: usize = 14;
+    const NUM_ELEVATOR_PIXELS: usize = 10;
+    const YELLOW_PIXEL: RGB8 = RGB8::new(255, 255, 0);
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
         Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48)?;
-    // driver for our led strip
-    let mut strip_led_driver =
-        Ws2811Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio46)?;
-    let mut strip2_led_driver =
+    // drivers for our led strips
+    let mut elevator_led_driver =
+        Ws2811Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio16)?;
+    let mut floor_number_led_driver =
         Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio8)?;
 
-    let mut up_button = PinDriver::input(peripherals.pins.gpio37)?;
-    up_button.set_pull(Pull::Up)?;
-    // start all pixels as yellow at first
-
+    // NOTE: just a test of the LEDs
     set_led_yellow(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_secs(1));
-    let pixels = std::iter::repeat(RGB8::new(255, 255, 0)).take(NUM_PIXELS);
-    strip_led_driver.write(pixels)?;
+    let yellow_elevator_pixels = std::iter::repeat_n(YELLOW_PIXEL, NUM_ELEVATOR_PIXELS);
+    elevator_led_driver.write(yellow_elevator_pixels)?;
+    let yellow_floor_pixels = std::iter::repeat_n(YELLOW_PIXEL, NUM_FLOOR_BUTTON_PIXELS);
+    floor_number_led_driver.write(yellow_floor_pixels)?;
+    std::thread::sleep(Duration::from_secs(1));
+
+    // create our elevator
+    let mut elevator = ElevatorHandler::new(
+        1,
+        floor_number_led_driver,
+        NUM_FLOOR_BUTTON_PIXELS,
+        elevator_led_driver,
+        NUM_ELEVATOR_PIXELS,
+    )
+    .expect("Could not create elevator object");
+
+    // button for going up
+    let mut up_button = PinDriver::input(peripherals.pins.gpio37)?;
+    up_button.set_pull(Pull::Up)?;
 
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
 
-    let mut floor_number_animation =
-        Rgb8SingleLedFadeAnimation::new(NUM_PIXELS, RGB8::new(255, 255, 255), 70);
-
-    let mut pixel_animation = Rgb8BasicPixelSequenceAnimation::new(
-        NUM_PIXELS,
-        OFF_WHITE_SEQUENCE.to_vec(),
-        Direction::Forward,
-    );
-
-    let mut cur_floor_idx: usize = 0;
-
+    // TODO: implement going to the first floor when buttons are pressed
     let mut button_last_state;
     let mut button_current_state = false;
 
+    // READY
     set_led_blue(&mut onboard_led_driver)?;
+
     // Prevent program from exiting
     loop {
         // check the button state
@@ -87,38 +99,10 @@ fn main() -> Result<()> {
             set_led_blue(&mut onboard_led_driver)?;
         }
 
-        // DEBUG: if the button was just pressed, increase the floor index
-        if button_current_state && !button_last_state {
-            // since we have only so many pixels to represent the floors, we want to make sure we
-            // don't go out of bounds when we increase the floor index.
-
-            log::warn!("Floor index changed to {cur_floor_idx}");
-            // now we can set the floor LED since we just changed the data we are sending
-            floor_number_animation
-                .set_led_on(cur_floor_idx, true)
-                .expect("Could not set floor number LED");
-
-            // increment this index after we set the floor number, so we start at 0
-            cur_floor_idx = (cur_floor_idx + 1) % NUM_PIXELS;
-            // log::error!("Floor animation colors = {:?}", floor_number_animation);
-        }
-
-        floor_number_animation.next_frame();
-        let pixels = floor_number_animation.as_ref().clone().into_iter();
-
-        #[cfg(false)]
-        {
-            pixel_animation.next_frame();
-            let pixels = pixel_animation.as_ref().clone().into_iter();
-        }
-
-        strip2_led_driver.write(pixels.clone()).unwrap();
-        strip_led_driver.write(pixels).unwrap();
+        elevator.next_frame()?;
         std::thread::sleep(Duration::from_millis(100));
     }
 }
-
-// TODO: the functions below are kinda dumb
 
 /// Sets the onboard ESP32-S3 WS2812 LED to green.
 fn set_led_green(led_driver: &mut Ws2812Esp32RmtDriver) -> anyhow::Result<()> {
