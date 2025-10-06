@@ -84,15 +84,21 @@ fn main() -> Result<()> {
             &mut up_button_last_state,
             &mut up_button_current_state,
             &up_button,
-            &mut onboard_led_driver,
         )?;
         check_button_state(
             &mut down_button_last_state,
             &mut down_button_current_state,
             &down_button,
-            &mut onboard_led_driver,
         )?;
 
+        // set onboard LED
+        if down_button_current_state || up_button_current_state {
+            set_led_green(&mut onboard_led_driver)?;
+        } else {
+            set_led_blue(&mut onboard_led_driver)?;
+        }
+
+        // tell elevator if a button is pressed
         if down_button_current_state {
             log::debug!("Down button pressed");
             elevator.press_down_button();
@@ -112,7 +118,6 @@ fn main() -> Result<()> {
 /// * `button_last_state`: The last button state.
 /// * `button_current_state`: The current button state.
 /// * `button_driver`: The button driver for reading an input.
-/// * `onboard_led_driver`: The onboard LED driver to show button has been pressed.
 ///
 /// # Returns
 /// anyhow::Result<()>
@@ -120,7 +125,6 @@ fn check_button_state<'d, ThePin, MODE>(
     button_last_state: &mut bool,
     button_current_state: &mut bool,
     button_driver: &PinDriver<'d, ThePin, MODE>,
-    onboard_led_driver: &mut Ws2812Esp32RmtDriver,
 ) -> anyhow::Result<()>
 where
     ThePin: Pin,
@@ -129,10 +133,8 @@ where
     *button_last_state = *button_current_state;
     if button_driver.is_low() {
         *button_current_state = true;
-        set_led_green(onboard_led_driver)?;
     } else {
         *button_current_state = false;
-        set_led_blue(onboard_led_driver)?;
     }
 
     Ok(())
