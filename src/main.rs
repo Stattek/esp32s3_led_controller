@@ -1,27 +1,16 @@
 mod elevator;
 mod ws2811;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use esp_idf_svc::hal::{
-    gpio::{Input, PinDriver, Pull},
+    gpio::{InputMode, Pin, PinDriver, Pull},
     prelude::Peripherals,
 };
-use log::LevelFilter;
 use smart_leds::{SmartLedsWrite, RGB8};
 use std::time::Duration;
 use ws2812_esp32_rmt_driver::{
-    driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl},
-    LedPixelEsp32Rmt, Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
-};
-
-use esp32_led_animation::{
-    led_animation::{
-        basic_pixel_sequence_animation::Rgb8BasicPixelSequenceAnimation,
-        basic_pixel_sequences::{FOURTH_OF_JULY_SEQUENCE, OFF_WHITE_SEQUENCE},
-        elevator_animation::{self, Rgb8ElevatorAnimation},
-        single_led_fade_animation::Rgb8SingleLedFadeAnimation,
-    },
-    Direction, RgbLedAnimation,
+    driver::color::{LedPixelColor, LedPixelColorGrb24},
+    Ws2812Esp32Rmt, Ws2812Esp32RmtDriver,
 };
 
 use crate::{
@@ -37,26 +26,27 @@ fn main() -> Result<()> {
     // number of pixels on LED light strip
     const NUM_FLOOR_BUTTON_PIXELS: usize = 14;
     const NUM_ELEVATOR_PIXELS: usize = 10;
-    const YELLOW_PIXEL: RGB8 = RGB8::new(255, 255, 0);
+    const RED_PIXEL: RGB8 = RGB8::new(255, 0, 0);
 
     // driver for communicating with the onboard WS2812 LED
     let mut onboard_led_driver =
         Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48)?;
     // drivers for our led strips
     let mut elevator_led_driver =
-        Ws2811Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio16)?;
+        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40)?;
     let mut floor_number_led_driver =
-        Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio8)?;
+        Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio17)?;
 
     // NOTE: just a test of the LEDs
     set_led_yellow(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_secs(1));
-    let yellow_elevator_pixels = std::iter::repeat_n(YELLOW_PIXEL, NUM_ELEVATOR_PIXELS);
+    let yellow_elevator_pixels = std::iter::repeat_n(RED_PIXEL, NUM_ELEVATOR_PIXELS);
     elevator_led_driver.write(yellow_elevator_pixels)?;
-    let yellow_floor_pixels = std::iter::repeat_n(YELLOW_PIXEL, NUM_FLOOR_BUTTON_PIXELS);
+    let yellow_floor_pixels = std::iter::repeat_n(RED_PIXEL, NUM_FLOOR_BUTTON_PIXELS);
     floor_number_led_driver.write(yellow_floor_pixels)?;
-    std::thread::sleep(Duration::from_secs(1));
+    std::thread::sleep(Duration::from_secs(2));
 
+    const ELEVATOR_FLOOR_13_IDX: usize = 13;
     // create our elevator
     let mut elevator = ElevatorHandler::new(
         1,
@@ -64,19 +54,25 @@ fn main() -> Result<()> {
         NUM_FLOOR_BUTTON_PIXELS,
         elevator_led_driver,
         NUM_ELEVATOR_PIXELS,
+        Some(ELEVATOR_FLOOR_13_IDX),
     )
     .expect("Could not create elevator object");
 
     // button for going up
     let mut up_button = PinDriver::input(peripherals.pins.gpio37)?;
     up_button.set_pull(Pull::Up)?;
+    let mut down_button = PinDriver::input(peripherals.pins.gpio35)?;
+    down_button.set_pull(Pull::Up)?;
 
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
 
     // TODO: implement going to the first floor when buttons are pressed
-    let mut button_last_state;
-    let mut button_current_state = false;
+    let mut up_button_last_state = false;
+    let mut up_button_current_state = false;
+
+    let mut down_button_last_state = false;
+    let mut down_button_current_state = false;
 
     // READY
     set_led_blue(&mut onboard_led_driver)?;
@@ -84,24 +80,62 @@ fn main() -> Result<()> {
     // Prevent program from exiting
     loop {
         // check the button state
-        button_last_state = button_current_state;
-        if up_button.is_low() {
-            button_current_state = true;
-        } else {
-            button_current_state = false;
-            set_led_blue(&mut onboard_led_driver)?;
-        }
+        check_button_state(
+            &mut up_button_last_state,
+            &mut up_button_current_state,
+            &up_button,
+            &mut onboard_led_driver,
+        )?;
+        check_button_state(
+            &mut down_button_last_state,
+            &mut down_button_current_state,
+            &down_button,
+            &mut onboard_led_driver,
+        )?;
 
-        // perform action based on button state
-        if button_current_state {
-            set_led_green(&mut onboard_led_driver)?;
-        } else {
-            set_led_blue(&mut onboard_led_driver)?;
+        if down_button_current_state {
+            log::info!("Down button pressed");
+            elevator.press_down_button();
+        }
+        if up_button_current_state {
+            log::info!("Up button pressed");
+            elevator.press_up_button();
         }
 
         elevator.next_frame()?;
         std::thread::sleep(Duration::from_millis(100));
     }
+}
+
+/// Checks the button state.
+///
+/// * `button_last_state`: The last button state.
+/// * `button_current_state`: The current button state.
+/// * `button_driver`: The button driver for reading an input.
+/// * `onboard_led_driver`: The onboard LED driver to show button has been pressed.
+///
+/// # Returns
+/// anyhow::Result<()>
+fn check_button_state<'d, ThePin, MODE>(
+    button_last_state: &mut bool,
+    button_current_state: &mut bool,
+    button_driver: &PinDriver<'d, ThePin, MODE>,
+    onboard_led_driver: &mut Ws2812Esp32RmtDriver,
+) -> anyhow::Result<()>
+where
+    ThePin: Pin,
+    MODE: InputMode, // We want this button driver to be in input mode
+{
+    *button_last_state = *button_current_state;
+    if button_driver.is_low() {
+        *button_current_state = true;
+        set_led_green(onboard_led_driver)?;
+    } else {
+        *button_current_state = false;
+        set_led_blue(onboard_led_driver)?;
+    }
+
+    Ok(())
 }
 
 /// Sets the onboard ESP32-S3 WS2812 LED to green.
