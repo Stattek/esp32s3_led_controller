@@ -20,7 +20,7 @@ const FLOOR_NUMBER_OVER_FADE_VALUE: u8 = 0;
 const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(255, 255, 255);
 
 //defines for the elevator
-const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 155);
+const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 225);
 const RED_ELEVATOR_COLOR: RGB8 = RGB8::new(235, 0, 0);
 const ELEVATOR_SPEED: usize = 1;
 const ELEVATOR_STOP_FOR_NUM_FRAMES: u32 = 120;
@@ -190,7 +190,7 @@ where
         if let Some(floor_13_idx) = self.floor_13_idx {
             if self.from_floor_idx == floor_13_idx {
                 // set to red if coming from floor 13
-                log::info!("Elevator is now red");
+                log::debug!("Elevator is now red");
                 self.elevator_car_animation.set_color(RED_ELEVATOR_COLOR);
                 color_set = true;
             }
@@ -200,7 +200,7 @@ where
         // NOTE: Why? It's weird to see the color change right in front of your eyes,
         // so delay it until it's at another floor to make it less jarring.
         if !color_set && self.base_floor_idx != self.from_floor_idx {
-            log::info!("Elevator is now normal");
+            log::debug!("Elevator is now normal");
             self.elevator_car_animation.set_color(NORMAL_ELEVATOR_COLOR);
         }
     }
