@@ -26,7 +26,7 @@ const ELEVATOR_SPEED: usize = 1;
 const ELEVATOR_STOP_FOR_NUM_FRAMES: u32 = 120;
 
 ///Chance every frame to get a new purely random floor to go to.
-const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.008;
+const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.01;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ButtonPressed {
