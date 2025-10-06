@@ -94,11 +94,11 @@ fn main() -> Result<()> {
         )?;
 
         if down_button_current_state {
-            log::info!("Down button pressed");
+            log::debug!("Down button pressed");
             elevator.press_down_button();
         }
         if up_button_current_state {
-            log::info!("Up button pressed");
+            log::debug!("Up button pressed");
             elevator.press_up_button();
         }
 
