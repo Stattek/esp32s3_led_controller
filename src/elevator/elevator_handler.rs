@@ -11,7 +11,7 @@ use ws2812_esp32_rmt_driver::{
 };
 
 /// amount to fade in/out LEDs
-const ELEVATOR_CAR_FADE_STEP_VALUE: u8 = 70;
+const ELEVATOR_CAR_FADE_STEP_VALUE: u8 = 50;
 const FLOOR_NUMBER_FADE_STEP_VALUE: u8 = 70;
 
 /// The normal floor number color to use
