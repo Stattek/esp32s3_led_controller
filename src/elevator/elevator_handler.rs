@@ -12,19 +12,21 @@ use ws2812_esp32_rmt_driver::{
 
 /// amount to fade in/out LEDs
 const ELEVATOR_CAR_FADE_STEP_VALUE: u8 = 50;
+const ELEVATOR_CAR_OVER_FADE_VALUE: u8 = 40;
 const FLOOR_NUMBER_FADE_STEP_VALUE: u8 = 70;
+const FLOOR_NUMBER_OVER_FADE_VALUE: u8 = 0;
 
 /// The normal floor number color to use
 const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(255, 255, 255);
 
 //defines for the elevator
-const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 255);
-const RED_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 0, 0);
+const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 155);
+const RED_ELEVATOR_COLOR: RGB8 = RGB8::new(235, 0, 0);
 const ELEVATOR_SPEED: usize = 1;
 const ELEVATOR_STOP_FOR_NUM_FRAMES: u32 = 120;
 
-///Chance every frame to get a new floor to go to
-const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.1; // TODO: make this a lower chance
+///Chance every frame to get a new purely random floor to go to.
+const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.008;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ButtonPressed {
@@ -65,7 +67,6 @@ where
     /// pressed.
     next_floor_idx: Option<usize>,
     /// The floor that the elevator is coming from.
-    /// TODO: if someone comes from the 13th floor, light up the elevator red.
     from_floor_idx: usize,
     /// If the first floor button is pressed. The elevator will go to this floor after the current floor has
     /// been handled already.
@@ -122,13 +123,15 @@ where
             num_floors,
             NORMAL_FLOOR_NUMBER_COLOR,
             FLOOR_NUMBER_FADE_STEP_VALUE,
+            FLOOR_NUMBER_OVER_FADE_VALUE,
         );
         let elevator_car_animation = Rgb8ElevatorAnimation::new(
             NORMAL_ELEVATOR_COLOR,
             elevator_car_num_leds,
             elevator_car_num_leds,
             ELEVATOR_CAR_FADE_STEP_VALUE,
-            false,
+            ELEVATOR_CAR_OVER_FADE_VALUE,
+            true,
             ElevatorDirection::Up, // just a default, can be anything
             ELEVATOR_SPEED,
             ElevatorStartingPosition::Center,
@@ -251,7 +254,7 @@ where
         }
         // save this random floor
         self.next_floor_idx = Some(next_floor_idx);
-        log::debug!("Go to floor {next_floor_idx}");
+        log::info!("Go to floor {next_floor_idx}");
 
         // change directions if the floor is a different direction than the elevator is already going
         self.check_elevator_change_direction(next_floor_idx);
@@ -310,6 +313,8 @@ where
             }
 
             self.elevator_move_to_floor(random_floor)?;
+        } else {
+            log::debug!("Not going to a new floor");
         }
 
         Ok(())
@@ -322,6 +327,7 @@ where
     ) -> Result<(), ()> {
         if self.from_floor_idx == self.base_floor_idx {
             // if at the base floor already, go to a floor specified
+            log::debug!("handle button press");
             let err = self.try_random_floor(begin_floor_idx, final_floor_idx, true);
             if err.is_err() {
                 log::error!(
@@ -349,11 +355,12 @@ where
     /// * `new_floor_idx`: The new floor index to go to.
     fn elevator_check_next_floor(&mut self, new_floor_idx: usize, at_stopping_point: bool) {
         if let Some(next_floor_idx) = self.next_floor_idx {
+            log::debug!("checking stop");
             // we have some next floor to go to
             self.elevator_check_stop(next_floor_idx, new_floor_idx, at_stopping_point);
         } else if self.frames_stopped_remaining == 0 {
+            log::debug!("checking next move");
             // elevator can now move
-
             if self.button_pressed == ButtonPressed::Down {
                 log::debug!("Handle down press");
                 // down button was pressed
