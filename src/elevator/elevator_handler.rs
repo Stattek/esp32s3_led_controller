@@ -11,7 +11,8 @@ use ws2812_esp32_rmt_driver::{
 };
 
 /// amount to fade in/out LEDs
-const FADE_STEP_VALUE: u8 = 70;
+const ELEVATOR_CAR_FADE_STEP_VALUE: u8 = 70;
+const FLOOR_NUMBER_FADE_STEP_VALUE: u8 = 70;
 
 /// The normal floor number color to use
 const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(255, 255, 255);
@@ -117,13 +118,16 @@ where
         }
 
         // create the animations now
-        let floor_number_animation =
-            Rgb8SingleLedFadeAnimation::new(num_floors, NORMAL_FLOOR_NUMBER_COLOR, FADE_STEP_VALUE);
+        let floor_number_animation = Rgb8SingleLedFadeAnimation::new(
+            num_floors,
+            NORMAL_FLOOR_NUMBER_COLOR,
+            FLOOR_NUMBER_FADE_STEP_VALUE,
+        );
         let elevator_car_animation = Rgb8ElevatorAnimation::new(
             NORMAL_ELEVATOR_COLOR,
             elevator_car_num_leds,
             elevator_car_num_leds,
-            FADE_STEP_VALUE,
+            ELEVATOR_CAR_FADE_STEP_VALUE,
             false,
             ElevatorDirection::Up, // just a default, can be anything
             ELEVATOR_SPEED,
@@ -162,8 +166,8 @@ where
             self.elevator_car_animation.tail_idx(),
         ) + (self.base_floor_idx * distance_between_floors) as isize)
             as usize;
-        log::warn!("elevator_bot_idx = {}", elevator_bot_idx);
-        log::warn!(
+        log::debug!("elevator_bot_idx = {}", elevator_bot_idx);
+        log::debug!(
             "is at mulitple of {}: {}",
             distance_between_floors,
             elevator_bot_idx & distance_between_floors == 0
@@ -208,7 +212,7 @@ where
                 && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Up)
         {
             self.elevator_car_animation.change_direction();
-            log::warn!("Elevator car changed directions!")
+            log::debug!("Elevator car changed directions!")
         }
     }
 
@@ -223,7 +227,7 @@ where
             self.from_floor_idx = next_floor_idx;
             self.next_floor_idx = None;
 
-            log::warn!("arrived at destination floor {}", next_floor_idx);
+            log::debug!("arrived at destination floor {}", next_floor_idx);
             // stop the elevator
             self.elevator_car_animation.set_elevator_stopped(true);
             self.frames_stopped_remaining = ELEVATOR_STOP_FOR_NUM_FRAMES;
@@ -247,7 +251,7 @@ where
         }
         // save this random floor
         self.next_floor_idx = Some(next_floor_idx);
-        log::warn!("Go to floor {next_floor_idx}");
+        log::debug!("Go to floor {next_floor_idx}");
 
         // change directions if the floor is a different direction than the elevator is already going
         self.check_elevator_change_direction(next_floor_idx);
@@ -255,7 +259,7 @@ where
         self.elevator_check_elevator_color();
 
         self.elevator_car_animation.set_elevator_stopped(false);
-        log::warn!(
+        log::debug!(
             "Begin moving to floor {}, num frames remaining should be 0 and is ({})",
             next_floor_idx,
             self.frames_stopped_remaining
@@ -305,11 +309,14 @@ where
                 random_floor = Self::get_random_floor_number(begin_floor_idx, final_floor_idx);
             }
 
-            // DEBUG: go from 13 to 1
-            if self.from_floor_idx == self.base_floor_idx {
-                random_floor = 13;
-            } else {
-                random_floor = self.base_floor_idx;
+            #[cfg(false)]
+            {
+                // DEBUG: go from 13 to 1
+                if self.from_floor_idx == self.base_floor_idx {
+                    random_floor = 13;
+                } else {
+                    random_floor = self.base_floor_idx;
+                }
             }
 
             self.elevator_move_to_floor(random_floor)?;
@@ -358,12 +365,14 @@ where
             // elevator can now move
 
             if self.button_pressed == ButtonPressed::Down {
+                log::debug!("Handle down press");
                 // down button was pressed
                 let err = self.handle_button_press(0, self.base_floor_idx - 1);
                 if err.is_err() {
                     log::error!("Could not handle down button press");
                 }
             } else if self.button_pressed == ButtonPressed::Up {
+                log::debug!("Handle up press");
                 // up button was pressed
                 let err = self.handle_button_press(self.base_floor_idx + 1, self.num_floors - 1);
                 if err.is_err() {
@@ -379,7 +388,7 @@ where
         } else {
             // waiting...
             self.frames_stopped_remaining -= 1;
-            log::warn!("waiting..")
+            log::debug!("waiting..")
         }
     }
 
@@ -398,7 +407,7 @@ where
     fn elevator_next_frame(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
         self.elevator_car_animation.next_frame();
         let elevator_car_pixels = self.elevator_car_animation.as_ref().clone();
-        log::error!("DEBUG elevator_car_pixels = {:?}", elevator_car_pixels);
+        log::debug!("elevator_car_pixels = {:?}", elevator_car_pixels);
         self.elevator_car_led_driver.write(elevator_car_pixels)
     }
 
@@ -413,7 +422,7 @@ where
     pub fn next_frame(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
         // now let's see what floor the elevator is on.
         let (cur_floor_idx, at_stopping_point) = self.get_floor_idx();
-        log::warn!("current elevator floor index = {}", cur_floor_idx);
+        log::debug!("current elevator floor index = {}", cur_floor_idx);
 
         // perform checks for next floor
         self.elevator_check_next_floor(cur_floor_idx, at_stopping_point);
