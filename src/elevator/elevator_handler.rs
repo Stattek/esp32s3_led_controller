@@ -309,16 +309,6 @@ where
                 random_floor = Self::get_random_floor_number(begin_floor_idx, final_floor_idx);
             }
 
-            #[cfg(false)]
-            {
-                // DEBUG: go from 13 to 1
-                if self.from_floor_idx == self.base_floor_idx {
-                    random_floor = 13;
-                } else {
-                    random_floor = self.base_floor_idx;
-                }
-            }
-
             self.elevator_move_to_floor(random_floor)?;
         }
 
