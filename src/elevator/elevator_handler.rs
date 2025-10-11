@@ -17,7 +17,7 @@ const FLOOR_NUMBER_FADE_STEP_VALUE: u8 = 70;
 const FLOOR_NUMBER_OVER_FADE_VALUE: u8 = 0;
 
 /// The normal floor number color to use
-const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(214, 210, 173);
+const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(255, 255, 255);
 
 //defines for the elevator
 const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 225);
@@ -242,6 +242,11 @@ where
         }
     }
 
+    /// Checks that the elevator should stop.
+    ///
+    /// * `next_floor_idx`: The next floor index to go to.
+    /// * `new_floor_idx`: The new floor index to go to.
+    /// * `at_stopping_point`: Whether the elevator is at its stopping point.
     fn elevator_check_stop(
         &mut self,
         next_floor_idx: usize,
