@@ -248,22 +248,10 @@ where
     ///
     /// * `new_floor_idx`: The new floor index.
     fn check_elevator_change_direction(&mut self, new_floor_idx: usize) {
-        // since the directions can be flipped, handle that.
-        let up_direction = if self.reverse_direction {
-            ElevatorDirection::Down
-        } else {
-            ElevatorDirection::Up
-        };
-        let down_direction = if self.reverse_direction {
-            ElevatorDirection::Up
-        } else {
-            ElevatorDirection::Down
-        };
-
         if (new_floor_idx < self.from_floor_idx
-            && self.elevator_car_animation.elevator_direction() != down_direction)
+            && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Down)
             || (new_floor_idx > self.from_floor_idx
-                && self.elevator_car_animation.elevator_direction() != up_direction)
+                && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Up)
         {
             self.elevator_car_animation.change_direction();
             log::debug!("Elevator car changed directions!")
