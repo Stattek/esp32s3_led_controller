@@ -65,7 +65,7 @@ fn main() -> Result<()> {
         NUM_ELEVATOR_PIXELS,
         elevator_buttons_led_driver,
         Some(ELEVATOR_FLOOR_13_IDX),
-        true,
+        false,
     )
     .expect("Could not create elevator object");
 

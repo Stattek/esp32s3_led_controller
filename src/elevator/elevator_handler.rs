@@ -17,7 +17,7 @@ const FLOOR_NUMBER_FADE_STEP_VALUE: u8 = 70;
 const FLOOR_NUMBER_OVER_FADE_VALUE: u8 = 0;
 
 /// The normal floor number color to use
-const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(214, 210, 173);
+const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(255, 255, 255);
 
 //defines for the elevator
 const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 225);
