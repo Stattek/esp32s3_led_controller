@@ -1,3 +1,7 @@
+//! Elevator decoration program.
+//!
+//! TODO: handle all errors gracefully. Write errors are rare, but they can crash the program.
+
 mod elevator;
 mod ws2811;
 
@@ -106,11 +110,23 @@ fn main() -> Result<()> {
         // tell elevator if a button is pressed
         if down_button_current_state {
             log::debug!("Down button pressed");
-            elevator.press_down_button();
+            let err = elevator.press_down_button();
+            match err {
+                Err(_) => {
+                    log::error!("Could not press down button");
+                }
+                _ => {}
+            }
         }
         if up_button_current_state {
             log::debug!("Up button pressed");
-            elevator.press_up_button();
+            let err = elevator.press_up_button();
+            match err {
+                Err(_) => {
+                    log::error!("Could not press up button");
+                }
+                _ => {}
+            }
         }
 
         elevator.next_frame()?;

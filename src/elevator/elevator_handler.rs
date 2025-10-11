@@ -439,6 +439,13 @@ where
         self.floor_number_led_driver.write(floor_number_pixels)
     }
 
+    /// Simulates the next frame of the elevator up/down buttons and writes to LEDs.
+    fn buttons_next_frame(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
+        self.button_animation.next_frame();
+        let button_pixels = self.button_animation.as_ref().clone();
+        self.button_led_driver.write(button_pixels)
+    }
+
     /// Calculate the next frame and write it to the LEDs.
     pub fn next_frame(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
         // now let's see what floor the elevator is on.
@@ -459,25 +466,26 @@ where
         // handle the floor number animation
         // NOTE: we need to do this every frame, in case it is flickering
         self.floor_number_next_frame()?;
+        self.buttons_next_frame()?;
         Ok(())
     }
 
     /// Simulate pressing down button.
-    pub fn press_down_button(&mut self) {
+    pub fn press_down_button(&mut self) -> Result<(), ()> {
         self.button_pressed = ButtonPressed::Down;
         self.button_animation
-            .set_led_on(self.button_pressed as usize, true);
+            .set_led_on(self.button_pressed as usize, true)
     }
 
     /// Simulate pressing up button.
-    pub fn press_up_button(&mut self) {
+    pub fn press_up_button(&mut self) -> Result<(), ()> {
         self.button_pressed = ButtonPressed::Up;
         self.button_animation
-            .set_led_on(self.button_pressed as usize, true);
+            .set_led_on(self.button_pressed as usize, true)
     }
 
     /// Turns off buttons.
-    pub fn turn_off_buttons(&mut self) {
+    fn turn_off_buttons(&mut self) {
         self.button_pressed = ButtonPressed::None;
         self.button_animation.turn_led_off();
     }
