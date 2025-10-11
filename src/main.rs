@@ -25,7 +25,7 @@ fn main() -> Result<()> {
 
     // number of pixels on LED light strip
     const NUM_FLOOR_BUTTON_PIXELS: usize = 14;
-    const NUM_ELEVATOR_PIXELS: usize = 10;
+    const NUM_ELEVATOR_PIXELS: usize = 120;
     const RED_PIXEL: RGB8 = RGB8::new(255, 0, 0);
 
     // driver for communicating with the onboard WS2812 LED
@@ -33,9 +33,11 @@ fn main() -> Result<()> {
         Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48)?;
     // drivers for our led strips
     let mut elevator_led_driver =
-        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio40)?;
+        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio9)?;
     let mut floor_number_led_driver =
-        Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio17)?;
+        Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio46)?;
+    let mut elevator_buttons_led_driver =
+        Ws2812Esp32Rmt::new(peripherals.rmt.channel3, peripherals.pins.gpio10)?;
 
     // NOTE: just a test of the LEDs
     set_led_yellow(&mut onboard_led_driver)?;
@@ -59,15 +61,14 @@ fn main() -> Result<()> {
     .expect("Could not create elevator object");
 
     // button for going up
-    let mut up_button = PinDriver::input(peripherals.pins.gpio37)?;
+    let mut up_button = PinDriver::input(peripherals.pins.gpio36)?;
     up_button.set_pull(Pull::Up)?;
-    let mut down_button = PinDriver::input(peripherals.pins.gpio35)?;
+    let mut down_button = PinDriver::input(peripherals.pins.gpio37)?;
     down_button.set_pull(Pull::Up)?;
 
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
 
-    // TODO: implement going to the first floor when buttons are pressed
     let mut up_button_last_state = false;
     let mut up_button_current_state = false;
 

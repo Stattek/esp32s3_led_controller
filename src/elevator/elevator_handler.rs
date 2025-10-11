@@ -17,29 +17,35 @@ const FLOOR_NUMBER_FADE_STEP_VALUE: u8 = 70;
 const FLOOR_NUMBER_OVER_FADE_VALUE: u8 = 0;
 
 /// The normal floor number color to use
-const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(255, 255, 255);
+const NORMAL_FLOOR_NUMBER_COLOR: RGB8 = RGB8::new(214, 210, 173);
 
 //defines for the elevator
 const NORMAL_ELEVATOR_COLOR: RGB8 = RGB8::new(255, 255, 225);
 const RED_ELEVATOR_COLOR: RGB8 = RGB8::new(235, 0, 0);
-const ELEVATOR_SPEED: usize = 1;
+const ELEVATOR_SPEED: usize = 4;
 const ELEVATOR_STOP_FOR_NUM_FRAMES: u32 = 120;
 
 ///Chance every frame to get a new purely random floor to go to.
-const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.01;
+const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.02;
 
+// buttons
+const ELEVATOR_NUM_BUTTONS: usize = 2;
+
+/// Holds the button that is pressed. The value held inside is the index for the button LED to
+/// light up.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ButtonPressed {
-    None,
-    Up,
-    Down,
+    None = -1,
+    Up = 0,
+    Down = 1,
 }
 
 /// Struct to hold information about an elevator.
-pub struct ElevatorHandler<'d, CDevFloor, CDevElevator>
+pub struct ElevatorHandler<'d, CDevFloor, CDevElevator, CDevButton>
 where
     CDevFloor: LedPixelColor + From<RGB8>,
     CDevElevator: LedPixelColor + From<RGB8>,
+    CDevButton: LedPixelColor + From<RGB8>,
 {
     /// The floor index the elevator is on.
     floor_idx: usize,
@@ -53,11 +59,15 @@ where
     floor_number_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevFloor>,
     /// LED driver for the elevator car.
     elevator_car_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevElevator>,
-    /// The animation to play
+    /// LED driver for the buttons.
+    button_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevButton>,
+    /// The animation to play for the floor number.
     floor_number_animation: Rgb8SingleLedFadeAnimation,
     /// The animation for the elevator car.
     /// NOTE: Timing for where the elevator is should be based on this animation.
     elevator_car_animation: Rgb8ElevatorAnimation,
+    /// The animation to play for the button activated.
+    button_animation: Rgb8SingleLedFadeAnimation,
     /// The next floor we are going to.
     /// NOTE: Real elevators work differently, but you can't press the buttons inside the
     /// elevator, so nobody will notice.
@@ -77,10 +87,12 @@ where
     floor_13_idx: Option<usize>,
 }
 
-impl<'d, CDevFloor, CDevElevator> ElevatorHandler<'d, CDevFloor, CDevElevator>
+impl<'d, CDevFloor, CDevElevator, CDevButton>
+    ElevatorHandler<'d, CDevFloor, CDevElevator, CDevButton>
 where
     CDevFloor: LedPixelColor + From<RGB8>,
     CDevElevator: LedPixelColor + From<RGB8>,
+    CDevButton: LedPixelColor + From<RGB8>,
 {
     /// Creates a new elevator handler to simulate the elevator.
     ///
@@ -90,6 +102,7 @@ where
     /// represent the floor number.
     /// * `elevator_car_led_driver`: The elevator car LED driver.
     /// * `elevator_car_num_leds`: The number of LEDs to represent the elevator car.
+    /// * `button_led_driver`: The elevator button LED driver.
     /// * `floor_13_idx`: The index of the 13th floor.
     pub fn new(
         base_floor_idx: usize,
@@ -97,6 +110,7 @@ where
         num_floors: usize,
         elevator_car_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevElevator>,
         elevator_car_num_leds: usize,
+        button_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevButton>,
         floor_13_idx: Option<usize>,
     ) -> Option<Self> {
         // bounds check base floor
@@ -136,6 +150,13 @@ where
             ELEVATOR_SPEED,
             ElevatorStartingPosition::Center,
         );
+        // NOTE: buttons share the same values as the elevator floor number
+        let button_animation = Rgb8SingleLedFadeAnimation::new(
+            ELEVATOR_NUM_BUTTONS,
+            NORMAL_FLOOR_NUMBER_COLOR,
+            FLOOR_NUMBER_FADE_STEP_VALUE,
+            0,
+        );
 
         Some(Self {
             floor_idx: base_floor_idx, // we need to always start at the base floor
@@ -147,6 +168,8 @@ where
             elevator_car_animation,
             next_floor_idx: None,
             from_floor_idx: base_floor_idx,
+            button_led_driver,
+            button_animation,
             button_pressed: ButtonPressed::None,
             frames_stopped_remaining: 0,
             floor_13_idx,
@@ -336,8 +359,9 @@ where
                     final_floor_idx
                 );
             }
+
             // NOTE: this button press is unset once it leaves from the base floor
-            self.button_pressed = ButtonPressed::None;
+            self.turn_off_buttons();
         } else {
             // not at the base floor, go to the base floor
             let err = self.elevator_move_to_floor(self.base_floor_idx);
@@ -441,10 +465,20 @@ where
     /// Simulate pressing down button.
     pub fn press_down_button(&mut self) {
         self.button_pressed = ButtonPressed::Down;
+        self.button_animation
+            .set_led_on(self.button_pressed as usize, true);
     }
 
     /// Simulate pressing up button.
     pub fn press_up_button(&mut self) {
         self.button_pressed = ButtonPressed::Up;
+        self.button_animation
+            .set_led_on(self.button_pressed as usize, true);
+    }
+
+    /// Turns off buttons.
+    pub fn turn_off_buttons(&mut self) {
+        self.button_pressed = ButtonPressed::None;
+        self.button_animation.turn_led_off();
     }
 }
