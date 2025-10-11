@@ -28,8 +28,8 @@ const ELEVATOR_STOP_FOR_NUM_FRAMES: u32 = 120;
 ///Chance every frame to get a new purely random floor to go to.
 const ELEVATOR_RANDOM_NEW_FLOOR_CHANCE: f64 = 0.02;
 
-// buttons
-const ELEVATOR_NUM_BUTTONS: usize = 2;
+/// The number of buttons used to control the elevator. Each button has an LED in it.
+pub const ELEVATOR_NUM_BUTTONS: usize = 2;
 
 /// Holds the button that is pressed. The value held inside is the index for the button LED to
 /// light up.

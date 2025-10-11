@@ -14,7 +14,8 @@ use ws2812_esp32_rmt_driver::{
 };
 
 use crate::{
-    elevator::elevator_handler::ElevatorHandler, ws2811::ws2811_rmt_types::Ws2811Esp32Rmt,
+    elevator::elevator_handler::{ElevatorHandler, ELEVATOR_NUM_BUTTONS},
+    ws2811::ws2811_rmt_types::Ws2811Esp32Rmt,
 };
 
 fn main() -> Result<()> {
@@ -42,10 +43,12 @@ fn main() -> Result<()> {
     // NOTE: just a test of the LEDs
     set_led_yellow(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_secs(1));
-    let yellow_elevator_pixels = std::iter::repeat_n(RED_PIXEL, NUM_ELEVATOR_PIXELS);
-    elevator_led_driver.write(yellow_elevator_pixels)?;
-    let yellow_floor_pixels = std::iter::repeat_n(RED_PIXEL, NUM_FLOOR_BUTTON_PIXELS);
-    floor_number_led_driver.write(yellow_floor_pixels)?;
+    let elevator_pixels = std::iter::repeat_n(RED_PIXEL, NUM_ELEVATOR_PIXELS);
+    elevator_led_driver.write(elevator_pixels)?;
+    let test_floor_pixels = std::iter::repeat_n(RED_PIXEL, NUM_FLOOR_BUTTON_PIXELS);
+    floor_number_led_driver.write(test_floor_pixels)?;
+    let test_button_pixels = std::iter::repeat_n(RED_PIXEL, ELEVATOR_NUM_BUTTONS);
+    elevator_buttons_led_driver.write(test_button_pixels)?;
     std::thread::sleep(Duration::from_secs(2));
 
     const ELEVATOR_FLOOR_13_IDX: usize = 13;
@@ -56,6 +59,7 @@ fn main() -> Result<()> {
         NUM_FLOOR_BUTTON_PIXELS,
         elevator_led_driver,
         NUM_ELEVATOR_PIXELS,
+        elevator_buttons_led_driver,
         Some(ELEVATOR_FLOOR_13_IDX),
     )
     .expect("Could not create elevator object");
