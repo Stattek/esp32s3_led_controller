@@ -191,35 +191,37 @@ where
         let distance_between_floors = self.elevator_car_animation.elevator_length()
             + (self.elevator_car_animation.elevator_length() / 2);
 
-        // push the bottom index up so the first floor index is 0. We can save this as an unsigned
-        // integer due to this.
+        // this number is saved as an isize but should never be negative
         let elevator_bot_idx = if self.reverse_direction {
-            // normal direction, when going up, the lowest number is the bottom
+            // if it is reversed, shift the current index down then negate it
+            -(std::cmp::min(
+                self.elevator_car_animation.head_idx(),
+                self.elevator_car_animation.tail_idx(),
+            ) - (self.base_floor_idx * distance_between_floors) as isize)
+        } else {
+            // push the bottom index up so the first floor index is 0.
             std::cmp::min(
                 self.elevator_car_animation.head_idx(),
                 self.elevator_car_animation.tail_idx(),
-            )
-        } else {
-            // reverse direction, when going up, the highest number is the bottom. Negate it so we
-            // can save as a usize.
-            -std::cmp::max(
-                self.elevator_car_animation.head_idx(),
-                self.elevator_car_animation.tail_idx(),
-            )
-        } as usize
-            + (self.base_floor_idx * distance_between_floors);
+            ) + (self.base_floor_idx * distance_between_floors) as isize
+        };
+
+        assert!(
+            elevator_bot_idx >= 0,
+            "Bottom index of elevator car was negative"
+        );
         log::debug!("elevator_bot_idx = {}", elevator_bot_idx);
         log::debug!(
             "is at mulitple of {}: {}",
             distance_between_floors,
-            elevator_bot_idx & distance_between_floors == 0
+            elevator_bot_idx as usize % distance_between_floors == 0
         );
 
         (
             // divide top of elevator by the distance between floors
-            elevator_bot_idx / distance_between_floors,
+            elevator_bot_idx as usize / distance_between_floors,
             // only stop if at a multiple of distance_between_floors
-            elevator_bot_idx % distance_between_floors == 0,
+            elevator_bot_idx as usize % distance_between_floors == 0,
         )
     }
 
@@ -248,10 +250,21 @@ where
     ///
     /// * `new_floor_idx`: The new floor index.
     fn check_elevator_change_direction(&mut self, new_floor_idx: usize) {
+        let up_direction = if self.reverse_direction {
+            ElevatorDirection::Down
+        } else {
+            ElevatorDirection::Up
+        };
+        let down_direction = if self.reverse_direction {
+            ElevatorDirection::Up
+        } else {
+            ElevatorDirection::Down
+        };
+
         if (new_floor_idx < self.from_floor_idx
-            && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Down)
+            && self.elevator_car_animation.elevator_direction() != down_direction)
             || (new_floor_idx > self.from_floor_idx
-                && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Up)
+                && self.elevator_car_animation.elevator_direction() != up_direction)
         {
             self.elevator_car_animation.change_direction();
             log::debug!("Elevator car changed directions!")
