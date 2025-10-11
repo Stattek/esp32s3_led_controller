@@ -85,6 +85,8 @@ where
     frames_stopped_remaining: u32,
     /// The index of floor 13.
     floor_13_idx: Option<usize>,
+    /// Whether all directions in the elevator are reversed. For handling reversed LED strips.
+    reverse_direction: bool,
 }
 
 impl<'d, CDevFloor, CDevElevator, CDevButton>
@@ -104,6 +106,8 @@ where
     /// * `elevator_car_num_leds`: The number of LEDs to represent the elevator car.
     /// * `button_led_driver`: The elevator button LED driver.
     /// * `floor_13_idx`: The index of the 13th floor.
+    /// * `reverse_direction`: Whether to reverse the direction of the elevator. For LED strips
+    /// that are in the other direction.
     pub fn new(
         base_floor_idx: usize,
         floor_number_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevFloor>,
@@ -112,6 +116,7 @@ where
         elevator_car_num_leds: usize,
         button_led_driver: LedPixelEsp32Rmt<'d, RGB8, CDevButton>,
         floor_13_idx: Option<usize>,
+        reverse_direction: bool,
     ) -> Option<Self> {
         // bounds check base floor
         if base_floor_idx >= num_floors {
@@ -173,6 +178,7 @@ where
             button_pressed: ButtonPressed::None,
             frames_stopped_remaining: 0,
             floor_13_idx,
+            reverse_direction,
         })
     }
 
@@ -187,11 +193,21 @@ where
 
         // push the bottom index up so the first floor index is 0. We can save this as an unsigned
         // integer due to this.
-        let elevator_bot_idx = (std::cmp::min(
-            self.elevator_car_animation.head_idx(),
-            self.elevator_car_animation.tail_idx(),
-        ) + (self.base_floor_idx * distance_between_floors) as isize)
-            as usize;
+        let elevator_bot_idx = if self.reverse_direction {
+            // normal direction, when going up, the lowest number is the bottom
+            std::cmp::min(
+                self.elevator_car_animation.head_idx(),
+                self.elevator_car_animation.tail_idx(),
+            )
+        } else {
+            // reverse direction, when going up, the highest number is the bottom. Negate it so we
+            // can save as a usize.
+            -std::cmp::max(
+                self.elevator_car_animation.head_idx(),
+                self.elevator_car_animation.tail_idx(),
+            )
+        } as usize
+            + (self.base_floor_idx * distance_between_floors);
         log::debug!("elevator_bot_idx = {}", elevator_bot_idx);
         log::debug!(
             "is at mulitple of {}: {}",
@@ -232,10 +248,22 @@ where
     ///
     /// * `new_floor_idx`: The new floor index.
     fn check_elevator_change_direction(&mut self, new_floor_idx: usize) {
+        // since the directions can be flipped, handle that.
+        let up_direction = if self.reverse_direction {
+            ElevatorDirection::Down
+        } else {
+            ElevatorDirection::Up
+        };
+        let down_direction = if self.reverse_direction {
+            ElevatorDirection::Up
+        } else {
+            ElevatorDirection::Down
+        };
+
         if (new_floor_idx < self.from_floor_idx
-            && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Down)
+            && self.elevator_car_animation.elevator_direction() != down_direction)
             || (new_floor_idx > self.from_floor_idx
-                && self.elevator_car_animation.elevator_direction() != ElevatorDirection::Up)
+                && self.elevator_car_animation.elevator_direction() != up_direction)
         {
             self.elevator_car_animation.change_direction();
             log::debug!("Elevator car changed directions!")
