@@ -5,9 +5,8 @@
 mod elevator;
 mod ws2811;
 
-use anyhow::{Ok, Result};
 use esp_idf_svc::hal::{
-    gpio::{InputMode, Pin, PinDriver, Pull},
+    gpio::{InputMode, OutputMode, Pin, PinDriver, Pull},
     prelude::Peripherals,
 };
 use smart_leds::{SmartLedsWrite, RGB8};
@@ -22,7 +21,17 @@ use crate::{
     ws2811::ws2811_rmt_types::Ws2811Esp32Rmt,
 };
 
-fn main() -> Result<()> {
+/// Tests a relay on/off.
+#[cfg(false)]
+fn test_relay<'d, ThePin, MODE>(output_pin: &PinDriver<'d, ThePin, MODE>) -> anyhow::Result<()>
+where
+    ThePin: Pin,
+    // we want to be able to write to the relay
+    MODE: OutputMode,
+{
+}
+
+fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
 
@@ -38,11 +47,11 @@ fn main() -> Result<()> {
         Ws2812Esp32RmtDriver::new(peripherals.rmt.channel0, peripherals.pins.gpio48)?;
     // drivers for our led strips
     let mut elevator_led_driver =
-        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio9)?;
+        Ws2812Esp32Rmt::new(peripherals.rmt.channel1, peripherals.pins.gpio4)?;
     let mut floor_number_led_driver =
-        Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio46)?;
+        Ws2811Esp32Rmt::new(peripherals.rmt.channel2, peripherals.pins.gpio5)?;
     let mut elevator_buttons_led_driver =
-        Ws2812Esp32Rmt::new(peripherals.rmt.channel3, peripherals.pins.gpio10)?;
+        Ws2812Esp32Rmt::new(peripherals.rmt.channel3, peripherals.pins.gpio6)?;
 
     // NOTE: just a test of the LEDs
     set_led_yellow(&mut onboard_led_driver)?;
@@ -70,10 +79,13 @@ fn main() -> Result<()> {
     .expect("Could not create elevator object");
 
     // button for going up
-    let mut up_button = PinDriver::input(peripherals.pins.gpio36)?;
+    let mut up_button = PinDriver::input(peripherals.pins.gpio7)?;
     up_button.set_pull(Pull::Up)?;
-    let mut down_button = PinDriver::input(peripherals.pins.gpio37)?;
+    let mut down_button = PinDriver::input(peripherals.pins.gpio8)?;
     down_button.set_pull(Pull::Up)?;
+
+    // create an output pin so we can set the relay on/off
+    let mut relay_output = PinDriver::output(peripherals.pins.gpio9)?;
 
     set_led_green(&mut onboard_led_driver)?;
     std::thread::sleep(Duration::from_millis(400));
@@ -89,6 +101,14 @@ fn main() -> Result<()> {
 
     // Prevent program from exiting
     loop {
+        // TODO: relay test code
+        {
+            relay_output.set_low();
+            std::thread::sleep(Duration::from_secs(5));
+            relay_output.set_high();
+            std::thread::sleep(Duration::from_secs(4));
+        }
+
         // check the button state
         check_button_state(
             &mut up_button_last_state,
